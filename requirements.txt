@@ -1,0 +1,8 @@
+PyQt5
+PyQtWebEngine
+requests
+pandas
+beautifulsoup4
+matplotlib
+jinja2
+openpyxl
