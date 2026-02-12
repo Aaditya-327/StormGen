@@ -28,7 +28,7 @@ class FetchWorker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NOAA Atlas 14 Rainfall Generator")
+        self.setWindowTitle("StormGen: Automated NOAA Rainfall Distribution Tool")
         self.resize(1200, 800)
         
         self.generator = RainfallGenerator()
