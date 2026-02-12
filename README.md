@@ -32,33 +32,37 @@ This tool automates the process of creating design storms for hydrologic modelin
     *   **Review Recommendation**: The specific NOAA region type (A, B, C, D) is calculated and displayed.
     *   **Generate**: Choose "Auto-Select" to use the recommended proxy, or manually select a distribution.
 
+## Data Sources & Documentation
+
+This application relies on two primary official sources:
+
+1.  **Rainfall Depths (Precipitation Frequency)**: Fetched directly from the **NOAA Atlas 14** Precipitation Frequency Data Server (PFDS).
+    *   **API Endpoint**: `https://hdsc.nws.noaa.gov/cgi-bin/hdsc/new/fe_text_mean.csv`
+    *   **Documentation**: [NOAA Atlas 14 Documents](https://www.nws.noaa.gov/ohd/hdsc/PF_documents/Atlas14_Volume1.pdf)
+2.  **Temporal Distributions (Hyetograph Shapes)**: Based on the **USDA NRCS National Engineering Handbook (NEH), Part 630, Chapter 4**.
+    *   **Reference**: Figure 4-72 (Regionalized Temporal Distributions for Atlas 14).
+    *   **Types**: Includes Region A, B, C, and D distributions, as well as legacy SCS Type I, IA, II, and III.
+
 ## Logic & Defaults
 
 ### The "Auto-Select" Logic
-Modern hydrology (NOAA Atlas 14) moves away from the single "Type II" storm for the entire country. instead, it uses regionalized temporal distributions (Types A, B, C, D) based on the ratio of short-duration to long-duration rainfall.
+Modern hydrology (NOAA Atlas 14) uses regionalized temporal distributions (Types A, B, C, D) based on the ratio of short-duration to long-duration rainfall (intensity).
 
-This application implements this logic:
-1.  **Fetch**: 25-year 60-minute and 24-hour depths are fetched.
-2.  **Calculate Ratio**: $r = \frac{60min Depth}{24hr Depth}$
-3.  **Classify**:
-    *   **Type A** ($r < 0.30$): Least intense peak. *Proxy: SCS Type I.*
-    *   **Type B** ($0.30 \le r < 0.35$): Moderate intensity. *Proxy: SCS Type II.*
-    *   **Type C** ($0.35 \le r < 0.40$): High intensity. *Proxy: SCS Type III.*
-    *   **Type D** ($r \ge 0.40$): Extreme intensity. *Proxy: SCS Type III.*
+This application automates this selection:
+1.  **Calculate Ratio**: $r = \frac{60min Depth}{24hr Depth}$ (fetched from Atlas 14).
+2.  **Classify & Apply**:
+    *   **Region A** ($r < 0.30$): Slow-rising storm.
+    *   **Region B** ($0.30 \le r < 0.35$): Standard moderate storm.
+    *   **Region C** ($0.35 \le r < 0.40$): High-intensity peak.
+    *   **Region D** ($r \ge 0.40$): Extreme intensity peak.
 
-### Why "Proxy"? (Important Caveat)
-**BE CAREFUL:** While the app correctly identifies the *NOAA Type* (e.g., "Type B"), the exact tabular 6-minute values for NOAA A/B/C/D are highly specific to state/county regulations (often found in restricted PDF manuals like Virginia DEQ).
+**Are these "Proxies"?**
+No. This tool uses **digitized official coordinates** for Regions A, B, C, and D as defined in the NRCS NEH textbook. Unlike earlier versions that used SCS Type II as a proxy, this version uses the dedicated Atlas 14 regional curves.
 
-To ensure the app works out-of-the-box everywhere, **this application uses standard SCS (Legacy) distributions as proxies** for these types.
-*   **SCS Type II** is a conservative, standard proxy for **Type B**.
-*   **SCS Type III** is used for **Type C/D**.
+### Warning & Compliance
+*   **Compliance**: Always verify results against your local regulatory manual (e.g., Virginia DEQ, Texas DOT). Some states have specific variations of these curves.
+*   **48-hour Tail**: The generator outputs a 48-hour series where the last 24 hours are zero rainfall. This is standard for detention pond modeling to allow the hydrograph to "draw down."
 
-**If your project requires strict regulatory compliance with a specific state manual (e.g., "Virginia DEQ Chapter 10"), you should:**
-1.  Obtain the exact cumulative fraction table from your local manual.
-2.  Select **"Custom"** in the dropdown.
-3.  (Future Feature) Paste your specific distribution table.
-
-## Warning Limits
-
-*   **Legacy vs. Modern**: SCS Type II is a "nested" storm and is often **more conservative** (higher peak flow) than the actual NOAA Atlas 14 distributions. Using it is generally "safe" but might lead to larger-than-necessary detention ponds.
-*   **Data Source**: The app scrapes the NOAA PFDS. If NOAA changes their website structure, the fetcher may need updating.
+## Attribution
+Made by Aadi Bhattarai (aaditya.r.bhattarai@gmail.com)
+Based on NOAA PFDS and USDA NRCS NEH Part 630.
