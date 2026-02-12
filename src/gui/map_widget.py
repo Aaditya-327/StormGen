@@ -43,10 +43,18 @@ class MapWidget(QWidget):
                     attribution: '© OpenStreetMap contributors'
                 });
 
-                var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                var satellite_img = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 19,
                     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
                 });
+
+                var satellite_labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Esri'
+                });
+
+                // Combine into a Hybrid Group
+                var hybrid = L.layerGroup([satellite_img, satellite_labels]);
 
                 var map = L.map('map', {
                     zoomControl: true, 
@@ -57,7 +65,7 @@ class MapWidget(QWidget):
                 // Layer Control
                 var baseMaps = {
                     "Street Map": osm,
-                    "Satellite": satellite
+                    "Satellite Hybrid": hybrid
                 };
                 L.control.layers(baseMaps).addTo(map);
 
