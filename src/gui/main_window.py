@@ -155,7 +155,15 @@ class MainWindow(QMainWindow):
         # Right Panel (Tabs)
         self.tabs = QTabWidget()
         self.tab_map = MapWidget()
+        
+        # Hyetograph Tab with Copy Button
+        self.graph_container = QWidget()
+        self.graph_layout = QVBoxLayout(self.graph_container)
+        self.btn_copy_graph = QPushButton("Copy Graph Image")
+        self.btn_copy_graph.setStyleSheet("padding: 2px; height: 25px;")
         self.tab_graph = GraphWidget()
+        self.graph_layout.addWidget(self.btn_copy_graph)
+        self.graph_layout.addWidget(self.tab_graph)
         
         # Atlas 14 Tab with Copy Button
         self.atlas14_container = QWidget()
@@ -178,7 +186,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.tab_map, "Map Selection")
         self.tabs.addTab(self.atlas14_container, "Atlas 14 Data")
         self.tabs.addTab(self.results_container, "Formatted Results")
-        self.tabs.addTab(self.tab_graph, "Hyetograph")
+        self.tabs.addTab(self.graph_container, "Hyetograph")
         
         self.layout.addWidget(self.left_panel)
         self.layout.addWidget(self.tabs)
@@ -203,6 +211,7 @@ class MainWindow(QMainWindow):
         self.combo_return_period.currentTextChanged.connect(self._update_display_values)
         self.btn_copy_results.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_table))
         self.btn_copy_atlas14.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_atlas14))
+        self.btn_copy_graph.clicked.connect(self._copy_graph_to_clipboard)
         self.combo_pattern.currentTextChanged.connect(self._on_pattern_changed)
 
     def _on_pattern_changed(self, text):
@@ -594,3 +603,10 @@ class MainWindow(QMainWindow):
 
         QApplication.clipboard().setText(text)
         QMessageBox.information(self, "Copied", "Table data copied to clipboard.")
+
+    def _copy_graph_to_clipboard(self):
+        """Captures the graph widget as an image and copies it to the clipboard."""
+        # Grab the canvas widget specifically for a clean capture
+        pixmap = self.tab_graph.canvas.grab()
+        QApplication.clipboard().setPixmap(pixmap)
+        QMessageBox.information(self, "Copied", "Graph image copied to clipboard.")
