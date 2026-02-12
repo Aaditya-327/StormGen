@@ -43,9 +43,15 @@ This application relies on two primary official sources:
 1.  **Rainfall Depths (Precipitation Frequency)**: Fetched directly from the **NOAA Atlas 14** Precipitation Frequency Data Server (PFDS).
     *   **API Endpoint**: `https://hdsc.nws.noaa.gov/cgi-bin/hdsc/new/fe_text_mean.csv`
     *   **Documentation**: [NOAA Atlas 14 Documents](https://www.nws.noaa.gov/ohd/hdsc/PF_documents/Atlas14_Volume1.pdf)
-2.  **Temporal Distributions (Hyetograph Shapes)**: Based on the **USDA NRCS National Engineering Handbook (NEH), Part 630, Chapter 4**.
-    *   **Reference**: Figure 4-72 (Regionalized Temporal Distributions for Atlas 14).
-    *   **Types**: Includes Region A, B, C, and D distributions, as well as legacy SCS Type I, IA, II, and III.
+2.  **Temporal Distributions (Hyetograph Shapes)**:
+    *   **NRCS Regions A, B, C, D**: Sourced from **USDA NRCS National Engineering Handbook (NEH), Part 630, Chapter 4, Figure 4-72**. These are the modern standards for Atlas 14 data.
+    *   **SCS Types I, IA, II, III**: Sourced from **USDA NRCS Technical Release 55 (TR-55)**. These are legacy "nested" distributions.
+
+| Component | Official Source |
+| :--- | :--- |
+| **Regions A, B, C, D** | NRCS NEH Part 630, Chapter 4 (Fig. 4-72) |
+| **SCS Types I, IA, II, III** | NRCS Technical Release 55 (TR-55) |
+| **Rainfall Depths** | NOAA Atlas 14 PFDS API |
 
 
 
