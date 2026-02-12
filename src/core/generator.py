@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from scipy.interpolate import PchipInterpolator
 from src.utils.definitions import RAINFALL_DISTRIBUTIONS, NOAA_ATLAS_14_DISTRIBUTIONS
 
 class RainfallGenerator:
@@ -62,12 +61,9 @@ class RainfallGenerator:
         # First 24h is the distribution, next 24h is 0 incremental
         result_times = np.arange(0, 48.1, 0.1) # 0.0, 0.1, ... 48.0
         
-        # Interpolate cumulative fractions for first 24h using PCHIP for smoothness and monotonicity
-        pchip = PchipInterpolator(known_times, known_fractions)
-        fractions_24h = pchip(result_times[result_times <= 24.0])
-        
-        # Ensure it's clipped between 0 and 1 just in case of tiny precision errors
-        fractions_24h = np.clip(fractions_24h, 0, 1)
+        # Interpolate cumulative fractions for first 24h using Linear Interpolation (np.interp)
+        # as per user request to distribute increments equally within data blocks.
+        fractions_24h = np.interp(result_times[result_times <= 24.0], known_times, known_fractions)
         
         # Extend fractions to 48h (constant 1.0 after 24h)
         fractions = np.pad(fractions_24h, (0, len(result_times) - len(fractions_24h)), 'edge')
