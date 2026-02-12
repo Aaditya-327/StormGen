@@ -13,6 +13,10 @@ This tool automates the process of creating design storms for hydrologic modelin
 -   **Standard Distributions**: Includes standard SCS Type I, IA, II, and III distributions.
 -   **Interactive Map**: built-in Leaflet map for easy location selection.
 
+![App Screenshot](assets/app_screenshot.png)
+
+*The NOAA Atlas 14 Rainfall Generator main interface, showing the interactive map selection, rainfall generation parameters, and the newly added Atlas 14 data table tab.*
+
 ## Installation & Usage
 
 1.  **Install Dependencies**:
@@ -42,6 +46,8 @@ This application relies on two primary official sources:
 2.  **Temporal Distributions (Hyetograph Shapes)**: Based on the **USDA NRCS National Engineering Handbook (NEH), Part 630, Chapter 4**.
     *   **Reference**: Figure 4-72 (Regionalized Temporal Distributions for Atlas 14).
     *   **Types**: Includes Region A, B, C, and D distributions, as well as legacy SCS Type I, IA, II, and III.
+
+
 
 ## Logic & Defaults
 
