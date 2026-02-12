@@ -28,39 +28,74 @@ class MapWidget(QWidget):
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
             <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+            <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script>
             <style>
                 html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
                 #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
+                /* Fix for dark mode filter affecting search input text availability */
+                .leaflet-control-geosearch form input { color: black !important; }
             </style>
         </head>
         <body>
             <div id="map"></div>
             <script>
-                var map = L.map('map', {
-                    zoomControl: true, // Enable zoom buttons
-                    maxZoom: 25
-                }).setView([37.0902, -95.7129], 4); // Center of US
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 25,
-                    maxNativeZoom: 19,
+                // Define Base Layers
+                var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
                     attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
+                });
+
+                var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
+
+                var map = L.map('map', {
+                    zoomControl: true, 
+                    maxZoom: 19,
+                    layers: [osm] // Default to OSM
+                }).setView([37.0902, -95.7129], 4); 
+
+                // Layer Control
+                var baseMaps = {
+                    "Street Map": osm,
+                    "Satellite": satellite
+                };
+                L.control.layers(baseMaps).addTo(map);
+
+                // Search Control
+                const provider = new GeoSearch.OpenStreetMapProvider();
+                const searchControl = new GeoSearch.GeoSearchControl({
+                    provider: provider,
+                    style: 'button',
+                    autoClose: true,
+                    keepResult: true,
+                    showMarker: false, // We handle our own marker
+                });
+                map.addControl(searchControl);
 
                 var marker;
 
+                // Handle map clicks
                 function onMapClick(e) {
+                    updateMarker(e.latlng);
+                }
+
+                // Handle search results
+                map.on('geosearch/showlocation', function(result) {
+                    var latlng = result.location;
+                    updateMarker({lat: latlng.y, lng: latlng.x});
+                });
+
+                function updateMarker(latlng) {
                     if (marker) {
                         map.removeLayer(marker);
                     }
-                    marker = L.marker(e.latlng).addTo(map);
+                    marker = L.marker(latlng).addTo(map);
                     // Send coordinates back to Python
-                    // We can use the window title or console as a bridge if QWebChannel is too complex for now,
-                    // but QWebChannel is cleaner. For simplicity in this step, we'll try a title hack or just basic JS bridge later.
-                    // Actually, let's use the qeel (QtWebEngine equivalent) way or just simple console.log monitoring if possible, 
-                    // but for now, we'll set the title title to coordinates and catch it in python.
-                    document.title = "LOC:" + e.latlng.lat + "," + e.latlng.lng;
+                    document.title = "LOC:" + latlng.lat + "," + latlng.lng;
                 }
 
                 map.on('click', onMapClick);
