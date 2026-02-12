@@ -15,7 +15,7 @@ class IDFWidget(QWidget):
         self.ax = self.figure.add_subplot(111)
         self.is_dark = False
         
-    def plot_data(self, atlas_data, is_metric=False):
+    def plot_data(self, atlas_data):
         """
         Plot IDF curves on a log-log scale.
         """
@@ -48,16 +48,13 @@ class IDFWidget(QWidget):
         
         colors = plt.cm.jet(np.linspace(0, 1, len(rps)))
         
-        multiplier = 25.4 if is_metric else 1.0
-        unit_label = "mm/hr" if is_metric else "in/hr"
-        
         for i, rp in enumerate(rps):
             y_vals = [] # Intensity
             
             for k, m in durations:
                 depth = atlas_data[k].get(rp, np.nan)
-                # Intensity = Depth / (Duration_in_hours) * multiplier
-                intensity = (depth / (m / 60.0)) * multiplier
+                # Intensity = Depth / (Duration_in_hours)
+                intensity = depth / (m / 60.0)
                 y_vals.append(intensity)
             
             # Plot
@@ -65,7 +62,7 @@ class IDFWidget(QWidget):
             self.ax.loglog(x_vals, y_vals, marker='o', linestyle='-', label=label, color=colors[i], markersize=4)
 
         self.ax.set_xlabel('Duration (min)')
-        self.ax.set_ylabel(f'Intensity ({unit_label})')
+        self.ax.set_ylabel('Intensity (in/hr)')
         self.ax.set_title('Intensity-Duration-Frequency (IDF) Curves')
         
         # Set X-ticks to standard durations for readability

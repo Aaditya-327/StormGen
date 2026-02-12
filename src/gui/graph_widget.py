@@ -15,7 +15,7 @@ class GraphWidget(QWidget):
         self.ax = self.figure.add_subplot(111)
         self.is_dark = False # Default to light
         
-    def plot_data(self, df, is_metric=False):
+    def plot_data(self, df):
         self.figure.clear() # Clear the entire figure
         self.ax = self.figure.add_subplot(111) # Re-add subplot
         
@@ -24,27 +24,19 @@ class GraphWidget(QWidget):
         
         # Plot incremental rainfall as bars
         hours = df["Hours"].values
-        
-        if is_metric:
-            incremental = df["Incremental Rainfall (mm)"].values
-            cumulative = df["Cumulative Rainfall (mm)"].values
-            unit_label = "(mm)"
-            color_inc = 'orange' # Different color for metric? Or keep same? Let's keep blue/green standard
-        else:
-            incremental = df["Incremental Rainfall (in)"].values
-            cumulative = df["Cumulative Rainfall (in)"].values
-            unit_label = "(in)"
+        incremental = df["Incremental Rainfall (in)"].values
+        cumulative = df["Cumulative Rainfall (in)"].values
 
         # Bar plot for incremental (hyetograph)
-        self.ax.bar(hours, incremental, width=0.1, align='edge', label=f'Incremental {unit_label}', color='blue', alpha=0.7)
+        self.ax.bar(hours, incremental, width=0.1, align='edge', label='Incremental (in)', color='blue', alpha=0.7)
         
         # Line plot for cumulative on secondary axis
         self.ax2 = self.ax.twinx()
-        self.ax2.plot(hours, cumulative, color='green', label=f'Cumulative {unit_label}', linewidth=2)
-        self.ax2.set_ylabel(f'Cumulative Rainfall {unit_label}', color='green')
+        self.ax2.plot(hours, cumulative, color='green', label='Cumulative (in)', linewidth=2)
+        self.ax2.set_ylabel('Cumulative Rainfall (in)', color='green')
         
         self.ax.set_xlabel('Time (hours)')
-        self.ax.set_ylabel(f'Incremental Rainfall {unit_label}', color='blue')
+        self.ax.set_ylabel('Incremental Rainfall (in)', color='blue')
         self.ax.set_title('24-Hour Rainfall Hyetograph')
         
         # Legend
