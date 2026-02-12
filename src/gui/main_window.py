@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from src.gui.map_widget import MapWidget
 from src.gui.graph_widget import GraphWidget
+from src.gui.idf_widget import IDFWidget
 from src.core.atlas14 import Atlas14Fetcher
 from src.core.generator import RainfallGenerator
 
@@ -165,6 +166,15 @@ class MainWindow(QMainWindow):
         self.graph_layout.addWidget(self.btn_copy_graph)
         self.graph_layout.addWidget(self.tab_graph)
         
+        # IDF Tab with Copy Button
+        self.idf_container = QWidget()
+        self.idf_layout = QVBoxLayout(self.idf_container)
+        self.btn_copy_idf = QPushButton("Copy IDF Graph")
+        self.btn_copy_idf.setStyleSheet("padding: 2px; height: 25px;")
+        self.tab_idf = IDFWidget()
+        self.idf_layout.addWidget(self.btn_copy_idf)
+        self.idf_layout.addWidget(self.tab_idf)
+        
         # Atlas 14 Tab with Copy Button
         self.atlas14_container = QWidget()
         self.atlas14_layout = QVBoxLayout(self.atlas14_container)
@@ -187,6 +197,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.atlas14_container, "Atlas 14 Data")
         self.tabs.addTab(self.results_container, "Formatted Results")
         self.tabs.addTab(self.graph_container, "Hyetograph")
+        self.tabs.addTab(self.idf_container, "IDF Curves")
         
         self.layout.addWidget(self.left_panel)
         self.layout.addWidget(self.tabs)
@@ -212,6 +223,7 @@ class MainWindow(QMainWindow):
         self.btn_copy_results.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_table))
         self.btn_copy_atlas14.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_atlas14))
         self.btn_copy_graph.clicked.connect(self._copy_graph_to_clipboard)
+        self.btn_copy_idf.clicked.connect(self._copy_idf_to_clipboard)
         self.combo_pattern.currentTextChanged.connect(self._on_pattern_changed)
 
     def _on_pattern_changed(self, text):
@@ -410,6 +422,9 @@ class MainWindow(QMainWindow):
         
         # Populate Atlas 14 Table
         self._populate_atlas14_table(self.full_atlas_data)
+        
+        # Plot IDF Curves
+        self.tab_idf.plot_data(self.full_atlas_data)
         
     def _update_display_values(self):
         if not self.fetched_data or not hasattr(self, 'full_atlas_data'):
@@ -610,3 +625,9 @@ class MainWindow(QMainWindow):
         pixmap = self.tab_graph.canvas.grab()
         QApplication.clipboard().setPixmap(pixmap)
         QMessageBox.information(self, "Copied", "Graph image copied to clipboard.")
+
+    def _copy_idf_to_clipboard(self):
+        """Captures the IDF widget as an image and copies it to the clipboard."""
+        pixmap = self.tab_idf.canvas.grab()
+        QApplication.clipboard().setPixmap(pixmap)
+        QMessageBox.information(self, "Copied", "IDF Graph copied to clipboard.")

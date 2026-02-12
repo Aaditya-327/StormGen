@@ -28,14 +28,10 @@ class MapWidget(QWidget):
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-            <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
             <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-            <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script>
             <style>
                 html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
                 #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
-                /* Fix for dark mode filter affecting search input text availability */
-                .leaflet-control-geosearch form input { color: black !important; }
             </style>
         </head>
         <body>
@@ -65,52 +61,12 @@ class MapWidget(QWidget):
                 };
                 L.control.layers(baseMaps).addTo(map);
 
-                // Search Control
-                const provider = new GeoSearch.OpenStreetMapProvider();
-                const searchControl = new GeoSearch.GeoSearchControl({
-                    provider: provider,
-                    style: 'button',
-                    autoClose: true,
-                    keepResult: true,
-                    showMarker: false, 
-                });
-                map.addControl(searchControl);
-
-                // Fix: Force Enter key to submit search form
-                // QWebEngine sometimes suppresses form submission on enter in specific contexts
-                setTimeout(function(){
-                    var input = document.querySelector('.leaflet-control-geosearch form input');
-                    if(input){
-                        input.addEventListener('keydown', function(event) {
-                            if (event.key === "Enter") {
-                                event.preventDefault();
-                                var form = document.querySelector('.leaflet-control-geosearch form');
-                                if(form) {
-                                    // Trigger the submit event manually or find the submit button
-                                    // Geosearch library usually listens on submit
-                                    var event = new Event('submit', {
-                                        'bubbles': true,
-                                        'cancelable': true
-                                    });
-                                    form.dispatchEvent(event);
-                                }
-                            }
-                        });
-                    }
-                }, 1000); // Delay to ensure control is rendered
-
                 var marker;
 
                 // Handle map clicks
                 function onMapClick(e) {
                     updateMarker(e.latlng);
                 }
-
-                // Handle search results
-                map.on('geosearch/showlocation', function(result) {
-                    var latlng = result.location;
-                    updateMarker({lat: latlng.y, lng: latlng.x});
-                });
 
                 function updateMarker(latlng) {
                     if (marker) {
