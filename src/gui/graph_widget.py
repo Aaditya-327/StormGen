@@ -45,7 +45,7 @@ class GraphWidget(QWidget):
         # Combine legends
         lines, labels = self.ax.get_legend_handles_labels()
         lines2, labels2 = self.ax2.get_legend_handles_labels()
-        self.ax.legend(lines + lines2, labels + labels2, loc='upper left')
+        self.ax.legend(lines + lines2, labels + labels2, loc='lower right')
         
         self.ax.grid(True, linestyle='--', alpha=0.7)
         
