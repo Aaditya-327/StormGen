@@ -72,9 +72,32 @@ class MapWidget(QWidget):
                     style: 'button',
                     autoClose: true,
                     keepResult: true,
-                    showMarker: false, // We handle our own marker
+                    showMarker: false, 
                 });
                 map.addControl(searchControl);
+
+                // Fix: Force Enter key to submit search form
+                // QWebEngine sometimes suppresses form submission on enter in specific contexts
+                setTimeout(function(){
+                    var input = document.querySelector('.leaflet-control-geosearch form input');
+                    if(input){
+                        input.addEventListener('keydown', function(event) {
+                            if (event.key === "Enter") {
+                                event.preventDefault();
+                                var form = document.querySelector('.leaflet-control-geosearch form');
+                                if(form) {
+                                    // Trigger the submit event manually or find the submit button
+                                    // Geosearch library usually listens on submit
+                                    var event = new Event('submit', {
+                                        'bubbles': true,
+                                        'cancelable': true
+                                    });
+                                    form.dispatchEvent(event);
+                                }
+                            }
+                        });
+                    }
+                }, 1000); // Delay to ensure control is rendered
 
                 var marker;
 
