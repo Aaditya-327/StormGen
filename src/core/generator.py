@@ -41,7 +41,7 @@ class RainfallGenerator:
         """
         
         # Get the distribution points
-        if distribution_name == "Custom" and custom_curve:
+        if distribution_name.startswith("Custom") and custom_curve:
             points = custom_curve
         else:
             points = RAINFALL_DISTRIBUTIONS.get(distribution_name)
