@@ -203,6 +203,51 @@ class MainWindow(QMainWindow):
         self.combo_return_period.currentTextChanged.connect(self._update_display_values)
         self.btn_copy_results.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_table))
         self.btn_copy_atlas14.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_atlas14))
+        self.combo_pattern.currentTextChanged.connect(self._on_pattern_changed)
+
+    def _on_pattern_changed(self, text):
+        if text.startswith("Custom"):
+            QMessageBox.information(self, "Custom Distribution", 
+                "You have selected 'Custom'.\n\n"
+                "Please edit the 'custom.csv' file in the project folder to set your distribution.\n"
+                "Format: hours, cum. unit rain\n"
+                "Example: 12.0, 0.50")
+
+    def _load_custom_csv(self):
+        import csv
+        import os
+        
+        file_path = "custom.csv"
+        if not os.path.exists(file_path):
+            QMessageBox.critical(self, "File Not Found", f"Could not find '{file_path}'. Please ensure it exists in the project root.")
+            return None
+            
+        custom_data = {}
+        try:
+            with open(file_path, 'r') as f:
+                reader = csv.reader(f)
+                header = next(reader, None) # Skip header
+                for row in reader:
+                    if not row or len(row) < 2: continue
+                    try:
+                        h = float(row[0])
+                        f_val = float(row[1])
+                        custom_data[h] = f_val
+                    except ValueError:
+                        continue
+            
+            if not custom_data:
+                raise ValueError("No valid data found in CSV.")
+            
+            # Ensure 0.0 and 24.0 are present
+            if 0.0 not in custom_data: custom_data[0.0] = 0.0
+            if 24.0 not in custom_data: custom_data[24.0] = 1.0
+            
+            return custom_data
+            
+        except Exception as e:
+            QMessageBox.critical(self, "CSV Error", f"Failed to read custom.csv:\n{str(e)}")
+            return None
 
     def _toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
@@ -436,18 +481,16 @@ class MainWindow(QMainWindow):
                 return
 
         # Check if Custom
+        custom_curve = None
         if pattern.startswith("Custom"):
-            # TODO: Implement a dialog to paste the table
-            # For now, just show a warning that it's not implemented fully in this snippet
-            QMessageBox.information(self, "Custom Distribution", "Please assume a flat distribution for now or implement the paste dialog.")
-            # For the sake of the generator, we need to pass a valid dict if name is "Custom"
-            # generator.generate expects custom_curve argument if name is "Custom"
-            # Let's just return for now or implement a simple input dialog
-            pass
+            custom_curve = self._load_custom_csv()
+            if not custom_curve:
+                return # Error message already shown in _load_custom_csv
 
         try:
-            df = self.generator.generate(depth, pattern)
+            df = self.generator.generate(depth, pattern, custom_curve=custom_curve)
             
+            # Populate Table
             # Populate Table
             self.tab_table.setRowCount(len(df))
             self.tab_table.setColumnCount(len(df.columns))
