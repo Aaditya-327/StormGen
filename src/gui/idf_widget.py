@@ -15,17 +15,9 @@ class IDFWidget(QWidget):
         self.ax = self.figure.add_subplot(111)
         self.is_dark = False
         
-    def plot_data(self, atlas_data):
+    def plot_data(self, atlas_data, is_metric=False):
         """
         Plot IDF curves on a log-log scale.
-        atlas_data: dict containing '60-min', '24-hr', etc. or the structured full_data from Atlas14
-        
-        Expected structure of atlas_data (from full_atlas_data in MainWindow):
-        {
-            "5-min": {2: val, 5: val, ...},
-            "15-min": {...},
-            ...
-        }
         """
         self.figure.clear()
         self.ax = self.figure.add_subplot(111)
@@ -38,50 +30,34 @@ class IDFWidget(QWidget):
             self.canvas.draw()
             return
 
-        # Define standard durations in minutes and their label for plotting
-        # dur_map = {"5-min": 5, "15-min": 15, "60-min": 60, "2-hr": 120, "3-hr": 180, "6-hr": 360, "12-hr": 720, "24-hr": 1440}
-        # But we need to check what keys are actually in atlas_data.
-        # Based on atlas14.py, keys are like "5-min", "60-min", "24-hr".
-        
         # Helper to parse duration key to minutes
         def parse_dur(k):
             if "-min" in k: return int(k.replace("-min", ""))
             if "-hr" in k: return int(k.replace("-hr", "")) * 60
             return None
 
-        # Prepare X (Duration in min) and Y (Intensity in in/hr)
-        # We want a line for each Return Period.
-        # Identify available Return Periods first.
-        
-        # We look at the first available duration to get RPs
         first_key = list(atlas_data.keys())[0]
-        rps = sorted(atlas_data[first_key].keys()) # e.g. [1, 2, 5, 10, 25, 50, 100, 200, 500, 1000]
-        
-        # Collect data for each RP
-        # X axis: Duration (minutes)
-        # Y axis: Intensity (in/hr)
+        rps = sorted(atlas_data[first_key].keys()) 
         
         durations = []
         for k in atlas_data.keys():
             m = parse_dur(k)
             if m: durations.append((k, m))
-        
-        # Sort by duration minutes
         durations.sort(key=lambda x: x[1])
-        
         x_vals = [d[1] for d in durations] # minutes
         
-        # Define colors/markers for standard RPs
-        # Use a colormap or fixed list
         colors = plt.cm.jet(np.linspace(0, 1, len(rps)))
+        
+        multiplier = 25.4 if is_metric else 1.0
+        unit_label = "mm/hr" if is_metric else "in/hr"
         
         for i, rp in enumerate(rps):
             y_vals = [] # Intensity
             
             for k, m in durations:
                 depth = atlas_data[k].get(rp, np.nan)
-                # Intensity = Depth / (Duration_in_hours)
-                intensity = depth / (m / 60.0)
+                # Intensity = Depth / (Duration_in_hours) * multiplier
+                intensity = (depth / (m / 60.0)) * multiplier
                 y_vals.append(intensity)
             
             # Plot
@@ -89,7 +65,7 @@ class IDFWidget(QWidget):
             self.ax.loglog(x_vals, y_vals, marker='o', linestyle='-', label=label, color=colors[i], markersize=4)
 
         self.ax.set_xlabel('Duration (min)')
-        self.ax.set_ylabel('Intensity (in/hr)')
+        self.ax.set_ylabel(f'Intensity ({unit_label})')
         self.ax.set_title('Intensity-Duration-Frequency (IDF) Curves')
         
         # Set X-ticks to standard durations for readability

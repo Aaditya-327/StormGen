@@ -142,7 +142,18 @@ class MainWindow(QMainWindow):
         # Add note about 48h data
         self.lbl_note_48h = QLabel("<b>Note:</b> Output includes an additional 24h tail of zero rainfall (48h total duration).")
         self.lbl_note_48h.setWordWrap(True)
+        self.lbl_note_48h.setWordWrap(True)
         self.left_layout.addWidget(self.lbl_note_48h)
+        
+        self.left_layout.addWidget(self._make_line())
+
+        # Unit Selection
+        unit_layout = QHBoxLayout()
+        unit_layout.addWidget(QLabel("<b>Display Units:</b>"))
+        self.combo_units = QComboBox()
+        self.combo_units.addItems(["Imperial (in)", "Metric (mm)"])
+        unit_layout.addWidget(self.combo_units)
+        self.left_layout.addLayout(unit_layout)
         
         self.left_layout.addStretch()
         
@@ -224,7 +235,28 @@ class MainWindow(QMainWindow):
         self.btn_copy_atlas14.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_atlas14))
         self.btn_copy_graph.clicked.connect(self._copy_graph_to_clipboard)
         self.btn_copy_idf.clicked.connect(self._copy_idf_to_clipboard)
+        self.btn_copy_idf.clicked.connect(self._copy_idf_to_clipboard)
         self.combo_pattern.currentTextChanged.connect(self._on_pattern_changed)
+        self.combo_units.currentIndexChanged.connect(self._on_units_changed)
+
+    def _on_units_changed(self):
+        # Trigger updates for Atlas 14 and Charts if data exists
+        if hasattr(self, 'full_atlas_data') and self.full_atlas_data:
+            self._populate_atlas14_table(self.full_atlas_data)
+            self._update_display_values()
+            
+            # Re-plot IDF if visible or just update it
+            is_metric = self.combo_units.currentText() == "Metric (mm)"
+            self.tab_idf.plot_data(self.full_atlas_data, is_metric)
+
+        # If we have generated results, we might want to re-plot the hyetograph
+        # But the hyetograph depends on the specific 'df' from generation. 
+        # Ideally, we should regenerate or store the last df.
+        # For now, let's just note that the user might need to click Generate again for the Hyetograph to update 
+        # OR we can store the last df.
+        if hasattr(self, 'last_generated_df'):
+            is_metric = self.combo_units.currentText() == "Metric (mm)"
+            self.tab_graph.plot_data(self.last_generated_df, is_metric)
 
     def _on_pattern_changed(self, text):
         if text.startswith("Custom"):
@@ -424,7 +456,8 @@ class MainWindow(QMainWindow):
         self._populate_atlas14_table(self.full_atlas_data)
         
         # Plot IDF Curves
-        self.tab_idf.plot_data(self.full_atlas_data)
+        is_metric = self.combo_units.currentText() == "Metric (mm)"
+        self.tab_idf.plot_data(self.full_atlas_data, is_metric)
         
     def _update_display_values(self):
         if not self.fetched_data or not hasattr(self, 'full_atlas_data'):
@@ -514,20 +547,44 @@ class MainWindow(QMainWindow):
         try:
             df = self.generator.generate(depth, pattern, custom_curve=custom_curve)
             
-            # Populate Table
+            # Calculate MM columns
+            df["Incremental Rainfall (mm)"] = df["Incremental Rainfall (in)"] * 25.4
+            df["Cumulative Rainfall (mm)"] = df["Cumulative Rainfall (in)"] * 25.4
+            
+            # Reorder columns for display
+            display_cols = ["Date", "Time", "Hours", 
+                            "Incremental Rainfall (in)", "Cumulative Rainfall (in)",
+                            "Incremental Rainfall (mm)", "Cumulative Rainfall (mm)"]
+            
+            # Ensure df has these columns (Time/Date/Hours are standard from generator)
+            # The generator returns: Date, Time, Hours, Incremental Rainfall (in), Cumulative Rainfall (in)
+            
+            self.last_generated_df = df # Store for unit toggling re-plot
+
             # Populate Table
             self.tab_table.setRowCount(len(df))
-            self.tab_table.setColumnCount(len(df.columns))
-            self.tab_table.setHorizontalHeaderLabels(df.columns)
+            self.tab_table.setColumnCount(len(display_cols))
+            self.tab_table.setHorizontalHeaderLabels(display_cols)
             
             for i, row in df.iterrows():
-                for j, val in enumerate(row):
-                    self.tab_table.setItem(i, j, QTableWidgetItem(str(val)))
+                # We need to access by column name to match display_cols order
+                for j, col_name in enumerate(display_cols):
+                    val = row[col_name]
+                    # Format floats
+                    if isinstance(val, (float, int)):
+                         if "Time" in col_name or "Hours" in col_name:
+                             item = QTableWidgetItem(str(val))
+                         else:
+                             item = QTableWidgetItem(f"{val:.4f}")
+                    else:
+                        item = QTableWidgetItem(str(val))
+                    self.tab_table.setItem(i, j, item)
             
             self.tab_table.resizeColumnsToContents()
             
             # Plot Graph
-            self.tab_graph.plot_data(df)
+            is_metric = self.combo_units.currentText() == "Metric (mm)"
+            self.tab_graph.plot_data(df, is_metric)
             
             self.tabs.setCurrentIndex(2) # Switch to Graph tab
             
@@ -573,12 +630,17 @@ class MainWindow(QMainWindow):
         self.tab_atlas14.setVerticalHeaderLabels(available_durations)
         
         # Fill Data
+        # Fill Data with Unit Conversion
+        is_metric = self.combo_units.currentText() == "Metric (mm)"
+        multiplier = 25.4 if is_metric else 1.0
+        
         for row_idx, dur in enumerate(available_durations):
             row_data = data_map[dur]
             for col_idx, rp in enumerate(return_periods):
                 val = row_data.get(rp, "")
                 if isinstance(val, (int, float)):
-                    item = QTableWidgetItem(f"{val:.3f}")
+                    disp_val = val * multiplier
+                    item = QTableWidgetItem(f"{disp_val:.3f}")
                     item.setTextAlignment(Qt.AlignCenter)
                     self.tab_atlas14.setItem(row_idx, col_idx, item)
                 else:
