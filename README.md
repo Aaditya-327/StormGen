@@ -1,4 +1,4 @@
-# NOAA Atlas 14 Rainfall Generator
+# StormGen: Automated NOAA Rainfall Distribution Tool
 
 A Python desktop application for generating 24-hour rainfall hyetographs using official NOAA Atlas 14 precipitation frequency estimates.
 
