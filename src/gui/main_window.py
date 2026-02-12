@@ -60,14 +60,14 @@ class MainWindow(QMainWindow):
         self.input_lat = QDoubleSpinBox()
         self.input_lat.setRange(-90, 90)
         self.input_lat.setDecimals(6)
-        self.input_lat.setPrefix("Lat: ")
         
         self.input_lon = QDoubleSpinBox()
         self.input_lon.setRange(-180, 180)
         self.input_lon.setDecimals(6)
-        self.input_lon.setPrefix("Lon: ")
         
+        coords_layout.addWidget(QLabel("Lat:"))
         coords_layout.addWidget(self.input_lat)
+        coords_layout.addWidget(QLabel("Lon:"))
         coords_layout.addWidget(self.input_lon)
         self.left_layout.addLayout(coords_layout)
         
