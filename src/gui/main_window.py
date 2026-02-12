@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QComboBox, QDoubleSpinBox, QPushButton, 
                              QTableWidget, QTabWidget, QTableWidgetItem, QMessageBox,
-                             QScrollArea)
+                             QScrollArea, QApplication)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from src.gui.map_widget import MapWidget
 from src.gui.graph_widget import GraphWidget
@@ -155,13 +155,29 @@ class MainWindow(QMainWindow):
         # Right Panel (Tabs)
         self.tabs = QTabWidget()
         self.tab_map = MapWidget()
-        self.tab_table = QTableWidget()
         self.tab_graph = GraphWidget()
-        self.tab_atlas14 = QTableWidget() # New tab for Atlas 14 table
+        
+        # Atlas 14 Tab with Copy Button
+        self.atlas14_container = QWidget()
+        self.atlas14_layout = QVBoxLayout(self.atlas14_container)
+        self.btn_copy_atlas14 = QPushButton("Copy Atlas 14 Table")
+        self.btn_copy_atlas14.setStyleSheet("padding: 2px; height: 25px;")
+        self.tab_atlas14 = QTableWidget()
+        self.atlas14_layout.addWidget(self.btn_copy_atlas14)
+        self.atlas14_layout.addWidget(self.tab_atlas14)
+        
+        # Results Tab with Copy Button
+        self.results_container = QWidget()
+        self.results_layout = QVBoxLayout(self.results_container)
+        self.btn_copy_results = QPushButton("Copy Results Table")
+        self.btn_copy_results.setStyleSheet("padding: 2px; height: 25px;")
+        self.tab_table = QTableWidget()
+        self.results_layout.addWidget(self.btn_copy_results)
+        self.results_layout.addWidget(self.tab_table)
         
         self.tabs.addTab(self.tab_map, "Map Selection")
-        self.tabs.addTab(self.tab_atlas14, "Atlas 14 Data") # Insert before generated results for flow? Or after? User said "4 tabs", let's put it 2nd or last. "map, table, hyetograph, atlas14"
-        self.tabs.addTab(self.tab_table, "Formatted Results")
+        self.tabs.addTab(self.atlas14_container, "Atlas 14 Data")
+        self.tabs.addTab(self.results_container, "Formatted Results")
         self.tabs.addTab(self.tab_graph, "Hyetograph")
         
         self.layout.addWidget(self.left_panel)
@@ -185,6 +201,8 @@ class MainWindow(QMainWindow):
         self.input_lat.valueChanged.connect(self._update_coords_label)
         self.input_lon.valueChanged.connect(self._update_coords_label)
         self.combo_return_period.currentTextChanged.connect(self._update_display_values)
+        self.btn_copy_results.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_table))
+        self.btn_copy_atlas14.clicked.connect(lambda: self._copy_table_to_clipboard(self.tab_atlas14))
 
     def _toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
@@ -500,3 +518,36 @@ class MainWindow(QMainWindow):
                     self.tab_atlas14.setItem(row_idx, col_idx, QTableWidgetItem(""))
         
         self.tab_atlas14.resizeColumnsToContents()
+
+    def _copy_table_to_clipboard(self, table):
+        """Copies the contents of a QTableWidget to the clipboard in TSV format."""
+        if table.rowCount() == 0:
+            return
+
+        text = ""
+        # Add Headers
+        headers = []
+        for j in range(table.columnCount()):
+            headers.append(str(table.horizontalHeaderItem(j).text()) if table.horizontalHeaderItem(j) else "")
+        
+        if table == self.tab_atlas14:
+            # Add vertical header if it's the Atlas 14 table (Durations)
+            text += "\t" + "\t".join(headers) + "\n"
+            for i in range(table.rowCount()):
+                row_label = table.verticalHeaderItem(i).text() if table.verticalHeaderItem(i) else ""
+                row_data = []
+                for j in range(table.columnCount()):
+                    item = table.item(i, j)
+                    row_data.append(item.text() if item else "")
+                text += row_label + "\t" + "\t".join(row_data) + "\n"
+        else:
+            text += "\t".join(headers) + "\n"
+            for i in range(table.rowCount()):
+                row_data = []
+                for j in range(table.columnCount()):
+                    item = table.item(i, j)
+                    row_data.append(item.text() if item else "")
+                text += "\t".join(row_data) + "\n"
+
+        QApplication.clipboard().setText(text)
+        QMessageBox.information(self, "Copied", "Table data copied to clipboard.")
