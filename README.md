@@ -19,11 +19,12 @@ This tool automates the process of creating design storms for hydrologic modelin
 
 ## Installation & Usage
 
-1.  **Install Dependencies**:
+1.  **Environment Setup (Conda)**
     ```bash
+    conda create -n StormGen python=3.10 -y
+    conda activate StormGen
     pip install -r requirements.txt
     ```
-    *Requires Python 3.9+, PyQt5, pandas, matplotlib, requests (or curl).*
 
 2.  **Run the Application**:
     ```bash
